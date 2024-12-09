@@ -4,3 +4,6 @@ requests
 rdflib
 scikit-learn
 numpy
+networkx
+community
+rdflib

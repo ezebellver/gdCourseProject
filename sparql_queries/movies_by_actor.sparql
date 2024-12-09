@@ -1,0 +1,10 @@
+PREFIX actor: <http://localhost/actor/>
+PREFIX movie: <http://localhost/movie/>
+
+SELECT ?actor ?movie ?title
+WHERE {
+    ?actor rdf:type actor:Actor .
+    ?actor actor:name "Leonardo DiCaprio" .
+    ?actor actor:actedIn ?movie .
+    ?movie movie:title ?title .
+}

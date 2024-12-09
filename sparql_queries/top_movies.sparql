@@ -1,0 +1,10 @@
+PREFIX movie: <http://localhost/movie/>
+
+SELECT ?movie ?title ?rating
+WHERE {
+    ?movie rdf:type movie:Movie .
+    ?movie movie:title ?title .
+    ?movie movie:imdbRating ?rating .
+}
+ORDER BY DESC(?rating)
+LIMIT 10

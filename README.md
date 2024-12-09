@@ -28,69 +28,78 @@ This project focuses on working with graph data in a Neo4j database. It involves
 
 ---
 
-## **Project Files**
+### Project Files:
 
-### **Directories**
-- **`data/`**
-  - `rdf_graph.csv`: Exported graph data for RDF creation.
-  - `rdf_queries.sparql`: Contains SPARQL queries for RDF validation.
-  - `recommendations.csv`: Contains computed similarity scores for movies.
+#### Directories:
 
-### **Code Files**
-- **`config.py`**: Contains configurations for Neo4j and the OMDb API.
-- **`main.py`**: Entry point for running the entire project pipeline.
-- **`graph_preparation.py`**: Handles data loading, cleaning, and enrichment in Neo4j.
-- **`recommendations.py`**: Computes movie recommendations based on similarity metrics.
-- **`community_detection.py`**: Implements Louvain and k-means clustering for community detection.
-- **`knowledge_graph.py`**: Handles RDF graph creation and SPARQL query validation.
+* `data/`
+    * `rdf_graph.csv`: Exported graph data for RDF creation.
+    * `rdf_queries.sparql`: Contains SPARQL queries for RDF validation.
+    * `recommendations.csv`: Contains computed similarity scores for movies.
+* `sparql_queries/`
+    * `top_movies.sparql`: Query to list the ten movies with the highest IMDb rating.
+    * `movies_by_actor.sparql`: Query to find all movies acted in by "Leonardo DiCaprio."
+    * `genres_of_inception.sparql`: Query to get all genres associated with the movie "Inception."
 
-### **Other Files**
-- **`requirements.txt`**: Lists Python dependencies required for the project.
+#### Code Files:
 
----
+* `config.py`: Contains configurations for Neo4j and the OMDb API.
+* `main.py`: Entry point for running the entire project pipeline.
+* `graph_preparation.py`: Handles data loading, cleaning, and enrichment in Neo4j.
+* `recommendations.py`: Computes movie recommendations based on similarity metrics (numerical and genre).
+* `community_detection.py`: Implements Louvain and k-means clustering for community detection.
+* `knowledge_graph.py`: Handles RDF graph creation and SPARQL query validation.
 
-## **How to Run the Project**
+#### Other Files:
 
-### **Prerequisites**
-- Neo4j version 5.25 installed and running in a Docker container.
-- Python 3.8 or higher.
-- OMDb API key (register at [OMDb API](https://omdbapi.com)).
+* `requirements.txt`: Lists Python dependencies required for the project.
 
-### **Steps**
-1. **Clone the Repository**
+
+### How to Run the Project:
+
+#### Prerequisites:
+
+* Neo4j version 5.25 installed and running in a Docker container.
+* Python 3.8 or higher.
+* OMDb API key (register at OMDb API).
+
+#### Steps:
+
+1. Clone the Repository
    ```bash
-   git clone https://github.com/your-repo/courseproject2024.git
-   cd courseproject2024
-    ```
+   git clone [https://github.com/your-repo/courseproject2024.git](https://github.com/your-repo/courseproject2024.git)
+   cd courseproject2024```
 
 2. **Install Dependencies**
     ```bash
-   pip install -r requirements.txt
+    pip install -r requirements.txt
     ```
-   
-3. **Set Up Neo4j**
-    - Place the `courseProject.db` file in the Neo4j directory.
-    - Configure connection details in `config.py`
 
-4. Run the Graph Preparation Script
+3. **Set Up Neo4j**
+    - Place the `courseProject2024.db` file in the Neo4j directory.
+    - Configure connection details in `config.py`.
+
+4. **Run the Graph Preparation Script**
     ```bash
-   python graph_preparation.py
+    python graph_preparation.py
     ```
-   
-5. Run the Recommendation System
+
+5. **Run the Recommendation System**
     ```bash
-   python recomendations.py
+    python recommendations.py
     ```
-   
-6. Perform Community Detection
+
+6. **Perform Community Detection**
     ```bash
-   pythom community_detection.py
+    python community_detection.py
     ```
-   
-7. Export RDF Graph and Validate
+
+7. **Export RDF Graph and Validate**
     ```bash
-   pythom knowledge_graph.py
+    python knowledge_graph.py
     ```
+
+---
 
 ## Results
 
@@ -101,14 +110,23 @@ This project focuses on working with graph data in a Neo4j database. It involves
 
 ### Part II - Recommendations and Clustering
 - Computed similarity scores based on:
-  - Numeric properties: `imdbRating`, `year` and `duration`.
+  - Numeric properties: `imdbRating`, `year`, and `duration`.
   - Non-numeric properties: Genre overlap.
 - Created similarity edges for the 10% most similar movies.
 - Detected communities using Louvain and k-means clustering.
 
 ### Part III - Knowledge Graph
-- Exported 100 movies, 30 users, 200 actors, and relevant relationships to RDF.
-- Validated the RDF graph with SPARQL queries.
+- Exported 100 movies, 30 users, 200 actors, and relevant relationships (IN_GENRE and ACTED_IN) to RDF.
+- Created CSV files for RDF population in the `data/` folder:
+  - `movies.csv`
+  - `users.csv`
+  - `actors.csv`
+  - `in_genre.csv`
+  - `acted_in.csv`
+- Validated the RDF graph with SPARQL queries placed in the `sparql_queries/` folder:
+  - `top_movies.sparql`: List the ten movies with the highest IMDb rating.
+  - `movies_by_actor.sparql`: Find movies acted in by "Leonardo DiCaprio."
+  - `genres_of_inception.sparql`: List genres of the movie "Inception."
 
 ## Contact
 For any questions about the project, feel free to contact:

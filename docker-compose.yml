@@ -1,0 +1,14 @@
+services:
+  neo4j:
+    image: neo4j:5.25.1
+    container_name: neo4j-container
+    volumes:
+      - ../project/neo4j_data:/var/lib/neo4j/data
+      - ../project/import:/var/lib/neo4j/import
+    environment:
+      NEO4J_AUTH: neo4j/password
+      NEO4J_dbms_connector_http_advertised__address: localhost
+      NEO4J_dbms_memory_pagecache_size: 512M
+    ports:
+      - "7474:7474"
+      - "7687:7687"

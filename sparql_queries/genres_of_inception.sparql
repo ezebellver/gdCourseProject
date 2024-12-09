@@ -1,0 +1,9 @@
+PREFIX movie: <http://localhost/movie/>
+PREFIX genre: <http://localhost/genre/>
+
+SELECT ?movie ?genre
+WHERE {
+    ?movie rdf:type movie:Movie .
+    ?movie movie:title "Inception" .
+    ?movie movie:hasGenre ?genre .
+}
