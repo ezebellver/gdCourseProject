@@ -8,7 +8,13 @@ services:
     environment:
       NEO4J_AUTH: neo4j/password
       NEO4J_dbms_connector_http_advertised__address: localhost
-      NEO4J_dbms_memory_pagecache_size: 512M
+      NEO4J_dbms_memory_pagecache_size: 2G
+      NEO4J_dbms_memory_transaction_total_max: 4G
+      NEO4J_dbms_memory_heap_max_size: 8G
+      NEO4J_initial_dbms_default__database: courseProject2024.db
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_dbms_security_procedures_unrestricted: 'apoc.*'
+      NEO4J_dbms_security_procedures_allowlist: 'apoc.*'
     ports:
       - "7474:7474"
       - "7687:7687"

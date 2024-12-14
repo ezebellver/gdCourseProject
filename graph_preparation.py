@@ -1,92 +1,103 @@
-import networkx as nx
-import community  # Louvain method
-import numpy as np
-from sklearn.cluster import KMeans
-from recommendations import recommend_unrated_movies
+import requests
+from config import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD, NEO4J_DATABASE, OMDB_API_KEY
 from neo4j_connector import Neo4jConnector
-from config import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD
 
 
-def louvain_community_detection(db, user_name, genre_list):
-    # Step 1: Use the recommend_unrated_movies to get top similar unrated movies
-    top_similar_movies = recommend_unrated_movies(db, user_name, genre_list, top_percent=10)
-
-    # Step 2: Build a NetworkX graph from the movie similarity data
-    G = nx.Graph()
-    for unrated_movie, rated_movie, similarity_score in top_similar_movies:
-        G.add_edge(unrated_movie['title'], rated_movie['title'], weight=similarity_score)
-
-    # Step 3: Apply Louvain Community Detection Algorithm
-    partition = community.best_partition(G)
-
-    # Step 4: Assign movies to communities
-    movie_communities = {}
-    for movie, community_id in partition.items():
-        movie_communities[movie] = community_id
-
-    # Step 5: Organize communities
-    communities = {}
-    for movie, community_id in movie_communities.items():
-        if community_id not in communities:
-            communities[community_id] = []
-        communities[community_id].append(movie)
-
-    # Output the communities
-    for community_id, movies in communities.items():
-        print(f"Community {community_id}: {', '.join(movies)}")
-
-    return communities
+def get_movie_details_from_omdb(imdb_id):
+    """Fetch detailed movie information from OMDb API using IMDb ID."""
+    url = f"http://www.omdbapi.com/?i={imdb_id}&apikey={OMDB_API_KEY}"
+    response = requests.get(url).json()
+    return response
 
 
-def kmeans_clustering(db, user_name, genre_list, num_clusters=5):
-    # Step 1: Use the recommend_unrated_movies to get top similar unrated movies
-    top_similar_movies = recommend_unrated_movies(db, user_name, genre_list, top_percent=10)
-
-    # Step 2: Create a feature matrix for K-means clustering (using similarity scores as features)
-    movie_names = []
-    similarity_matrix = []
-
-    for unrated_movie, rated_movie, similarity_score in top_similar_movies:
-        movie_names.append((unrated_movie['title'], rated_movie['title']))
-        similarity_matrix.append([similarity_score])
-
-    # Convert to numpy array for KMeans
-    similarity_matrix = np.array(similarity_matrix)
-
-    # Step 3: Apply K-means clustering
-    kmeans = KMeans(n_clusters=num_clusters, random_state=42)
-    kmeans.fit(similarity_matrix)
-
-    # Step 4: Assign movies to clusters
-    movie_clusters = {}
-    for idx, (movie1_title, movie2_title) in enumerate(movie_names):
-        cluster_id = kmeans.labels_[idx]
-        if cluster_id not in movie_clusters:
-            movie_clusters[cluster_id] = []
-        movie_clusters[cluster_id].append((movie1_title, movie2_title))
-
-    # Step 5: Output clusters
-    for cluster_id, movie_pairs in movie_clusters.items():
-        print(f"Cluster {cluster_id}: {', '.join([f'{m1} & {m2}' for m1, m2 in movie_pairs])}")
-
-    return movie_clusters
+def fix_imdb_id(imdb_id):
+    """Ensure IMDb ID has the 'tt' prefix."""
+    if not imdb_id.startswith("tt"):
+        # Pad the ID with leading zeros and prepend 'tt'
+        imdb_id = f"tt{imdb_id.zfill(7)}"
+    return imdb_id
 
 
-def main():
-    # Initialize Neo4j connector
-    db = Neo4jConnector(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
+def fix_all_movie_ids(db):
+    """Fix all movie IMDb IDs that are missing the 'tt' prefix."""
+    query = """
+    MATCH (m:Movie)
+    WHERE m.imdbId IS NOT NULL
+    SET m.imdbId = CASE
+        WHEN substring(m.imdbId, 0, 2) <> 'tt' THEN 'tt' + m.imdbId
+        ELSE m.imdbId
+    END
+    """
+    db.execute_query(query)
+    print("Fixed IMDb IDs for all movies.")
 
-    user_name = "john_doe"  # Replace with the desired user's name
-    genre_list = []  # Replace with the list of genres, if needed
 
-    # Louvain Community Detection
-    print("Louvain Community Detection:")
-    louvain_communities = louvain_community_detection(db, user_name, genre_list)
+def update_movies_without_imdb_rating(db, limit):
+    """Find movies without IMDb ratings and update them using the OMDb API."""
+    # Query to fetch the newest movies missing IMDb ratings, limited to 5000
+    query = """
+    MATCH (m:Movie)
+    WHERE m.imdbRating IS NULL AND m.imdbId IS NOT NULL AND m.year IS NOT NULL
+    RETURN m.movieId AS movieId, m.imdbId AS imdbId
+    ORDER BY m.year DESC
+    LIMIT $limit
+    """
+    movies, _, _ = db.execute_query(query, {"limit": limit})
 
-    # K-Means Clustering
-    print("\nK-Means Clustering:")
-    kmeans_clusters = kmeans_clustering(db, user_name, genre_list, num_clusters=5)
+    for movie in movies:
+        imdb_id = movie['imdbId']  # IMDb ID should now be fixed
+        movie_id = movie['movieId']
+
+        # Fetch data from OMDb API
+        movie_details = get_movie_details_from_omdb(imdb_id)
+        if movie_details.get("Response") == "True":
+            # Update the movie node in the database
+            query_update = """
+            MATCH (m:Movie {movieId: $movie_id})
+            SET m.imdbId = $imdbId,
+                m.imdbRating = $imdbRating,
+                m.imdbVotes = $imdbVotes,
+                m.plot = $plot,
+                m.awards = $awards,
+                m.language = $language,
+                m.country = $country,
+                m.poster = $poster,
+                m.rated = $rated,
+                m.released = $released,
+                m.runtime = $runtime,
+                m.writer = $writer,
+                m.metascore = $metascore
+            """
+            db.execute_query(query_update, {
+                'movie_id': movie_id,
+                'imdbId': imdb_id,
+                'imdbRating': movie_details.get('imdbRating'),
+                'imdbVotes': movie_details.get('imdbVotes'),
+                'plot': movie_details.get('Plot', ''),
+                'awards': movie_details.get('Awards', ''),
+                'language': movie_details.get('Language', ''),
+                'country': movie_details.get('Country', ''),
+                'poster': movie_details.get('Poster', ''),
+                'rated': movie_details.get('Rated', ''),
+                'released': movie_details.get('Released', ''),
+                'runtime': movie_details.get('Runtime', ''),
+                'writer': movie_details.get('Writer', ''),
+                'metascore': movie_details.get('Metascore', '')
+            })
+            print(f"Updated movie {movie_id} with IMDb ID {imdb_id}")
+        else:
+            print(f"Failed to fetch details for IMDb ID {imdb_id}")
 
 
 if __name__ == "__main__":
-    main()
+    # Create the Neo4j database connection
+    db = Neo4jConnector(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD, NEO4J_DATABASE)
+
+    # First, fix all IMDb IDs (ensure correct 'tt' prefix)
+    fix_all_movie_ids(db)
+
+    # Then, fix movies without IMDb ratings
+    update_movies_without_imdb_rating(db, 5000)
+
+    # Close the database connection when done
+    db.close()

@@ -4,7 +4,7 @@ from neo4j import GraphDatabase
 class Neo4jConnector:
     """Handles connection to Neo4j database."""
 
-    def __init__(self, uri, user, password, database="neo4j"):
+    def __init__(self, uri, user, password, database="courseProject2024.db"):
         """
         Initialize the Neo4j connection.
 

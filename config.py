@@ -4,7 +4,6 @@ import os
 os.environ['NEO4J_URI'] = 'bolt://localhost:7687'
 os.environ['NEO4J_USER'] = 'neo4j'
 os.environ['NEO4J_PASSWORD'] = 'password'
-# os.environ['NEO4J_DATABASE'] = 'courseProject2024.db'
 os.environ['NEO4J_DATABASE'] = 'courseproject2024.db'
 os.environ['OMDB_API_KEY'] = '4b5e7e78'
 

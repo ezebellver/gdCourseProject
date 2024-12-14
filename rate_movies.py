@@ -1,5 +1,6 @@
 import random
-from config import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD, OMDB_API_KEY
+from decimal import Decimal, ROUND_DOWN
+from config import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD
 from neo4j_connector import Neo4jConnector
 
 
@@ -35,6 +36,9 @@ def rate_movies(db, user_name, num_movies=200):
 
         # Ensure the rating stays within the valid range of 1 to 10
         user_rating = max(1, min(10, user_rating))
+
+        # Truncate the rating to 2 decimal places
+        user_rating = float(Decimal(user_rating).quantize(Decimal("0.01"), rounding=ROUND_DOWN))
 
         # Create a "RATED" relationship between the user and the movie
         query_rate = """
