@@ -6,7 +6,6 @@ from src.lib.neo4j_connector import Neo4jConnector
 
 
 def create_user_node(db, user_name):
-    """Create a user node in the Neo4j graph."""
     query = """
     MERGE (u:User {name: $name})
     RETURN u
@@ -16,7 +15,6 @@ def create_user_node(db, user_name):
 
 
 def rate_movies(db, user_name, num_movies=200):
-    """Rate the top movies with the most IMDb votes for the user."""
     query = """
     MATCH (m:Movie)
     WHERE m.imdbRating IS NOT NULL AND m.imdbVotes IS NOT NULL
