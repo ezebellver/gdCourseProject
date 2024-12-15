@@ -43,18 +43,27 @@ def update_movies_with_imdb_rating(db, limit):
         }
     )
     """
-    updated, _, _ = db.execute_query(query, {
+    result, _, _ = db.execute_query(query, {
         "omdbApiUrl": OMDB_API_URL,
         "apikey": OMDB_API_KEY,
         "limit": limit
     })
-    print(updated)
+    if result:
+        stats = result[0]
+        print(f"Total movies processed: {stats['operations']['total']}")
+        print(f"Successful operations: {stats['operations']['committed']}")
+        print(f"Failed operations: {stats['operations']['failed']}")
+        if stats['operations']['failed'] > 0:
+            print("Errors:")
+            print(stats['errorMessages'])
+    else:
+        print("No records updated or query failed.")
 
 
 if __name__ == "__main__":
     db = Neo4jConnector(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD, NEO4J_DATABASE)
 
-    update_movies_with_imdb_rating(db, 5000)
+    update_movies_with_imdb_rating(db, 1000)
 
     # Note that the API has a limit of 1000 requests per day with the free tier.
     # Therefore, the above function will not work for more than 1000 movies at once.
