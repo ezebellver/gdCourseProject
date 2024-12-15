@@ -4,3 +4,4 @@ src/part3/data/
 .venv/
 __pycache__/
 .env
+.env.bat

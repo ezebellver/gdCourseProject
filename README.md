@@ -1,43 +1,14 @@
 # **Course Project**
 
-## **Group Members**
-- **Ezequiel Bellver**
-- **Santiago Lo Coco**
+## How to Run the Project:
 
-## **Professor**
-- **Alejandro Vaisman**
-
-## **Course Information**
-- **Course Code:** MSE-BB-3-WS2024-IGD  
-- **Course Name:** Introduction to Graph Databases  
-- **University:** FH Technikum Wien (FHTW)
-
----
-
-## **Project Overview**
-
-This project focuses on working with graph data in a Neo4j database. It involves loading, cleaning, enriching, and analyzing graph data using Python and various tools. The tasks include recommendation systems, community detection, and exporting a portion of the graph as an RDF knowledge graph.
-
-### **Objectives**
-
-1. Prepare a graph database by:
-   - Loading the provided graph (`courseproject2024.db`).
-   - Enriching the graph with missing `imdbRating` data using an API.
-   - Adding a user node with 200 movie ratings.
-2. Build a recommendation system based on similarity metrics and perform community detection using clustering algorithms.
-3. Export a portion of the graph as RDF and write SPARQL queries to validate the data.
-
----
-
-### How to Run the Project:
-
-#### Prerequisites:
+### Prerequisites:
 
 * Docker.
 * Python 3.8 or higher.
 * OMDb API key (register at OMDb API).
 
-#### Steps:
+### Steps:
 
 1. **Clone the Repository**
    ```bash
@@ -46,9 +17,15 @@ This project focuses on working with graph data in a Neo4j database. It involves
    ```
 
 2. **Create a venv and activate it**
+    - Windows:
     ```bash
-    python -m venv
-    call .venv\Scripts\activate
+    python -m venv .venv
+    call .venv/Scripts/activate
+    ```
+    - Linux:
+    ```bash
+    python -m venv .venv
+    source bin/activate
     ```
 
 3. **Install Dependencies**
@@ -64,25 +41,69 @@ This project focuses on working with graph data in a Neo4j database. It involves
    ```bash
    docker compose up -d
    ```
-
-4. **Run the Graph Preparation Script**
-    ```bash
-    python graph_preparation.py
+   
+6. **Create a `.env` file in `src/.env`**
+    - Windows
+    ```env
+    set NEO4J_URI=bolt://localhost:7687
+    set NEO4J_USER=neo4j
+    set NEO4J_PASSWORD=password
+    set NEO4J_DATABASE=courseproject2024.db
+    set OMDB_API_KEY=<OMDB_API_KEY>
+    ```
+    - Linux
+    ```env
+    NEO4J_URI=bolt://localhost:7687
+    NEO4J_USER=neo4j
+    NEO4J_PASSWORD=password
+    NEO4J_DATABASE=courseproject2024.db
+    OMDB_API_KEY=<OMDB_API_KEY>
     ```
 
-5. **Run the Recommendation System**
+7. **Source the `.env` file**
+    - Windows
     ```bash
-    python recommendations.py
+    call src/.env
+    ```
+    - Linux
+    ```bash
+    source src/.env
     ```
 
-6. **Perform Community Detection**
+#### Part 1
+
+1. **Run the Graph Preparation script**
     ```bash
-    python community_detection.py
+    python src/part1/graph_preparation.py
     ```
 
-7. **Export RDF Graph and Validate**
+2. **Run the Rate Movies script**
     ```bash
-    python knowledge_graph.py
+    python src/part1/rate_movies.py
+    ```
+   
+#### Part 2
+
+1. **Run the Recommendation System**
+    ```bash
+    python src/part2/recommendations.py
+    ```
+
+2. **Perform Community Detection**
+    ```bash
+    python src/part2/community_detection.py
+    ```
+
+#### Part 3
+
+1. **Export Neo4j data**
+    ```bash
+    python src/part3/export_neo4j.py
+    ```
+   
+2. **Export RDF Graph and Validate**
+    ```bash
+    python src/part3/knowledge_graph.py
     ```
 
 ---
@@ -114,28 +135,9 @@ This project focuses on working with graph data in a Neo4j database. It involves
   - `movies_by_actor.sparql`: Find movies acted in by "Leonardo DiCaprio."
   - `genres_of_inception.sparql`: List genres of the movie "Inception."
 
+---
 
-### Project Files:
+## Group Members
 
-#### Directories:
-
-* `data/`
-    * `rdf_graph.csv`: Exported graph data for RDF creation.
-    * `rdf_queries.sparql`: Contains SPARQL queries for RDF validation.
-    * `recommendations.csv`: Contains computed similarity scores for movies.
-* `sparql_queries/`
-    * `top_movies.sparql`: Query to list the ten movies with the highest IMDb rating.
-    * `movies_by_actor.sparql`: Query to find all movies acted in by "Leonardo DiCaprio."
-    * `genres_of_inception.sparql`: Query to get all genres associated with the movie "Inception."
-
-#### Code Files:
-
-* `config.py`: Contains configurations for Neo4j and the OMDb API.
-* `graph_preparation.py`: Handles data loading, cleaning, and enrichment in Neo4j.
-* `recommendations.py`: Computes movie recommendations based on similarity metrics (numerical and genre).
-* `community_detection.py`: Implements Louvain and k-means clustering for community detection.
-* `knowledge_graph.py`: Handles RDF graph creation and SPARQL query validation.
-
-#### Other Files:
-
-* `requirements.txt`: Lists Python dependencies required for the project.
+- **Ezequiel Bellver**
+- **Santiago Lo Coco**
