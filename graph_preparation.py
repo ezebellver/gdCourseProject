@@ -1,10 +1,13 @@
 import requests
+import re
+
 from config import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD, NEO4J_DATABASE, OMDB_API_KEY, OMDB_API_URL
 from neo4j_connector import Neo4jConnector
+from utils import extract_runtime
 
 
 def get_movie_details_from_omdb(imdb_id):
-    """Fetch detailed movie information from OMDb API using IMDb ID."""
+    """Fetch the movie information from OMDb API using IMDb ID."""
     url = f"{OMDB_API_URL}/?i={imdb_id}&apikey={OMDB_API_KEY}"
     response = requests.get(url).json()
     return response
@@ -38,6 +41,7 @@ def update_movies_without_imdb_rating(db, limit):
         imdb_id = movie['imdbId']
 
         movie_details = get_movie_details_from_omdb(imdb_id)
+        print(movie_details)
 
         if movie_details.get("Response") == "True":
             query_update = """
@@ -45,13 +49,15 @@ def update_movies_without_imdb_rating(db, limit):
             SET m.imdbId = $imdbId,
                 m.imdbRating = $imdbRating,
                 m.imdbVotes = $imdbVotes,
-                m.year = $year
+                m.year = $year,
+                m.runtime = $runtime
             """
             db.execute_query(query_update, {
                 'imdbId': imdb_id,
                 'imdbRating': movie_details.get('imdbRating'),
                 'imdbVotes': movie_details.get('imdbVotes'),
-                'year': movie_details.get('Year')
+                'year': movie_details.get('Year'),
+                'runtime': extract_runtime(movie_details.get('Runtime'))
             })
             print(f"Updated movie {movie_details.get("Title")} with IMDb ID {imdb_id}")
         else:
@@ -59,14 +65,10 @@ def update_movies_without_imdb_rating(db, limit):
 
 
 if __name__ == "__main__":
-    # Create the Neo4j database connection
     db = Neo4jConnector(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD, NEO4J_DATABASE)
 
-    # First, fix all IMDb IDs (ensure correct 'tt' prefix)
     fix_all_movie_ids(db)
 
-    # Then, fix movies without IMDb ratings
     update_movies_without_imdb_rating(db, 5000)
 
-    # Close the database connection when done
     db.close()
