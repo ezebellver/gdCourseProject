@@ -84,6 +84,6 @@ with open("data/actors.csv", "r", encoding="utf-8") as file:
 
 add_relationship_triples()
 
-g.serialize(destination="knowledge_graph.rdf", format="turtle")
+g.serialize(destination="data/knowledge_graph.rdf", format="turtle")
 
 print("RDF knowledge graph has been created and saved as 'knowledge_graph.rdf'")

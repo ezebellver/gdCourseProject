@@ -19,3 +19,14 @@ services:
     ports:
       - "7474:7474"
       - "7687:7687"
+
+  virtuoso-opensource-7:
+    image: openlink/virtuoso-opensource-7:latest
+    container_name: virtuoso-container
+    volumes:
+      - ./virtuoso:/database
+    environment:
+      DBA_PASSWORD: mysecret
+    ports:
+      - 1111:1111
+      - 8890:8890
