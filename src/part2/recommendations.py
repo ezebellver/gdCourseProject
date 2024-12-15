@@ -88,7 +88,7 @@ def recommend_unrated_movies(db, user_name, rating_threshold=8, top_percent=10):
 if __name__ == "__main__":
     db = Neo4jConnector(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
 
-    user_name = "Project User"
+    user_name = "Sancho Panza"
     rating_threshold = 8
     top_percent = 10
 

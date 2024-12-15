@@ -12,7 +12,7 @@ services:
       NEO4J_server_memory_pagecache_size: 2G
       NEO4J_dbms_memory_transaction_total_max: 4G
       NEO4J_initial_dbms_default__database: courseProject2024.db
-      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_PLUGINS: '["apoc", "graph-data-science"]'
       NEO4J_dbms_security_procedures_unrestricted: 'apoc.*,gds.*'
       NEO4J_dbms_security_procedures_allowlist: 'apoc.coll.*,apoc.load.*,gds.*,apoc.algo.*,apoc.meta.*,apoc.*.*'
       EXTENSION_SCRIPT: /docker/neo4j-init.sh

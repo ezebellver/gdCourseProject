@@ -28,37 +28,43 @@ def perform_louvain_clustering(db):
     YIELD communityCount, modularity
     RETURN communityCount, modularity
     """
-    result = db.execute_query(query)
+    result, _, _ = db.execute_query(query)
     return result
 
 
 def perform_kmeans_clustering_neo4j(db, n_clusters=5):
-    query = """
-    CALL gds.graph.project(
-        'movieGraph',
-        ['Movie', 'User'],
-        {
-            SIMILAR_TO: {
-                properties: 'similarity'
-            }
-        }
-    )
+    check_graph_query = """
+        CALL gds.graph.exists('movieGraph') YIELD exists
+        RETURN exists
     """
-    db.execute_query(query)
+
+    graph_exists, _, _ = db.execute_query(check_graph_query)
+
+    if not graph_exists[0]["exists"]:
+        query = """
+        CALL gds.graph.project(
+            'movieGraph',
+            ['Movie', 'User'],
+            {
+                SIMILAR_TO: {
+                    properties: 'similarity'
+                }
+            }
+        )
+        """
+        db.execute_query(query)
 
     query = f"""
     CALL gds.kmeans.write(
         'movieGraph',
         {{
-            nodeProperties: ['similarity'],
+            nodeProperty: 'similarity',
             writeProperty: 'kmeansCluster',
             k: {n_clusters}
         }}
     )
-    YIELD iterationCount, computeMillis
-    RETURN iterationCount, computeMillis
     """
-    result = db.execute_query(query)
+    result, _, _ = db.execute_query(query)
     return result
 
 
@@ -68,7 +74,7 @@ def report_communities_louvain(db):
     RETURN m.title AS movie, m.community AS community
     ORDER BY community
     """
-    results = db.execute_query(query)
+    results, _, _ = db.execute_query(query)
 
     df = pd.DataFrame(results)
     return df
@@ -80,7 +86,7 @@ def report_communities_kmeans_neo4j(db):
     RETURN m.title AS movie, m.kmeansCluster AS cluster
     ORDER BY cluster
     """
-    results = db.execute_query(query)
+    results, _, _ = db.execute_query(query)
 
     df = pd.DataFrame(results)
     return df
