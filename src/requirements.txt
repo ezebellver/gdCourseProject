@@ -1,9 +1,6 @@
 neo4j
 pandas
 requests
-rdflib
-scikit-learn
-numpy
-networkx
 community
 rdflib
+iribaker
