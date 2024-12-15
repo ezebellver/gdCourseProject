@@ -1,5 +1,6 @@
 neo4j/
-data/
+src/part3/data/
 .idea/
 .venv/
 __pycache__/
+.env

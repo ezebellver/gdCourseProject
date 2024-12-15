@@ -1,9 +1,8 @@
 import requests
-import re
 
-from config import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD, NEO4J_DATABASE, OMDB_API_KEY, OMDB_API_URL
-from neo4j_connector import Neo4jConnector
-from utils import extract_runtime
+from src.lib.config import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD, NEO4J_DATABASE, OMDB_API_KEY, OMDB_API_URL
+from src.lib.neo4j_connector import Neo4jConnector
+from src.lib.utils import extract_runtime
 
 
 def get_movie_details_from_omdb(imdb_id):

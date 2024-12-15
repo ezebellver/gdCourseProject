@@ -1,5 +1,5 @@
-from neo4j_connector import Neo4jConnector
-from config import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD
+from src.lib.config import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD
+from src.lib.neo4j_connector import Neo4jConnector
 
 
 def calculate_similarities_in_graph(db, user_name, rating_threshold=8, limit=100):
