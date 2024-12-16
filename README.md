@@ -70,6 +70,16 @@
     source src/.env
     ```
 
+8. **Export PYTHON_PATH variable**
+    - Windows
+    ```bash
+    set PYTHONPATH=%cd%
+    ```
+    - Linux
+    ```bash
+    export PYTHONPATH="$PWD"
+    ```
+
 #### Part 1
 
 1. **Run the Graph Preparation script**
