@@ -2,100 +2,74 @@ from src.lib.config import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD
 from src.lib.neo4j_connector import Neo4jConnector
 
 
-def calculate_similarities_in_graph(db, user_name, rating_threshold=8, limit=100):
-    # Cypher query to calculate similarities between rated and unrated movies
+def calculate_similarities_in_graph(db, limit):
     query = """
-    WITH $user_name AS user_name, $rating_threshold AS rating_threshold
-    MATCH (u:User {name: user_name})-[:RATED]->(rated:Movie)
-    WHERE rated.imdbRating > rating_threshold
-    WITH u, rated LIMIT $limit
-    MATCH (unrated:Movie)
-    WHERE NOT (u)-[:RATED]->(unrated) AND unrated.imdbRating IS NOT NULL
-    WITH unrated, rated
-    MATCH (rated)-[:IN_GENRE]->(rated_genre:Genre)
-    MATCH (unrated)-[:IN_GENRE]->(unrated_genre:Genre)
-    WITH unrated, rated,
-        collect(DISTINCT rated_genre.name) AS rated_genres,
-        collect(DISTINCT unrated_genre.name) AS unrated_genres,
-        coalesce(toFloat(rated.imdbRating), 0.0) / 10.0 AS normalized_rating_rated,
-        coalesce(toFloat(unrated.imdbRating), 0.0) / 10.0 AS normalized_rating_unrated,
-        coalesce((toFloat(rated.year) - 1894.0) / (2030.0 - 1894.0), 0.0) AS normalized_year_rated,
-        coalesce((toFloat(unrated.year) - 1894.0) / (2030.0 - 1894.0), 0.0) AS normalized_year_unrated,
-        coalesce((toFloat(rated.runtime) - 60.0) / (360.0 - 60.0), 0.0) AS normalized_runtime_rated,
-        coalesce((toFloat(unrated.runtime) - 60.0) / (360.0 - 60.0), 0.0) AS normalized_runtime_unrated
-    WITH unrated, rated, rated_genres, unrated_genres,
-        sqrt(
-            0.6 * (normalized_rating_rated - normalized_rating_unrated) ^ 2 +
-            0.3 * (normalized_year_rated - normalized_year_unrated) ^ 2 +
-            0.1 * (normalized_runtime_rated - normalized_runtime_unrated) ^ 2
-        ) AS numerical_similarity,
-        [g IN rated_genres WHERE g IN unrated_genres] AS common_genres,
-        size(rated_genres) + size(unrated_genres) - size([g IN rated_genres WHERE g IN unrated_genres]) AS union_size
-    WITH unrated, rated,
-     CASE 
-         WHEN union_size = 0 THEN 0
-         ELSE (0.6 * (1 - numerical_similarity) + 0.4 * (size(common_genres) / union_size)) 
-     END AS combined_similarity
-    RETURN unrated.title AS unrated_title, rated.title AS rated_title, combined_similarity
-    ORDER BY combined_similarity DESC
+    MATCH (m:Movie)-[:IN_GENRE]->(g:Genre)<-[:IN_GENRE]-(rec:Movie)
+    WHERE m.imdbRating IS NOT NULL AND 
+        m.year IS NOT NULL AND m.runtime IS NOT NULL AND 
+        rec.imdbRating IS NOT NULL AND rec.year IS NOT NULL 
+        AND rec.runtime IS NOT NULL AND m.title <> rec.title
+    WITH m, rec
     LIMIT $limit
+
+    MATCH (m)-[:IN_GENRE]->(g:Genre)<-[:IN_GENRE]-(rec)
+    WITH m, rec,
+        abs(toFloat(m.imdbRating) - toFloat(rec.imdbRating)) AS ratingDiff,
+        abs(toFloat(m.year) - toFloat(rec.year)) AS yearDiff,
+        abs(toFloat(m.runtime) - toFloat(rec.runtime)) AS durationDiff,
+        count(g) AS genreScore
+
+    WITH m, rec, genreScore,
+        (1/(1 + ratingDiff)) * 0.5 + (1/(1 + yearDiff)) * 0.3 + (1/(1 + durationDiff)) * 0.2 AS numericScore
+    WITH m, rec, (numericScore + genreScore * 0.5) / 1.5 AS totalScore
+
+    ORDER BY m.title, totalScore DESC
+    WITH m, collect(rec) AS recommendations, totalScore
+    WITH m, recommendations[..toInteger(ceil(size(recommendations) * 0.1))] AS topRecommendations, totalScore
+
+    UNWIND topRecommendations AS rec
+    MERGE (m)-[:SIMILAR {score: totalScore}]->(rec);
     """
 
     results = db.execute_query(query, {
-        "user_name": user_name,
-        "rating_threshold": rating_threshold,
         "limit": limit
     })
 
     return results
 
 
-def create_similarity_edges_in_graph(db, recommendations):
-    # Cypher query to create similarity edges between unrated and rated movies
+def get_recommendations(db, user_name):
     query = """
-    WITH $recommendations AS recommendations
-    UNWIND recommendations AS rec
-    MATCH (unrated:Movie {title: rec.unrated_movie})
-    MATCH (rated:Movie {title: rec.rated_title})
-    MERGE (unrated)-[r:SIMILAR_TO]->(rated)
-    SET r.similarity = rec.similarity
+    MATCH (u:User {name: $user_name})-[r:RATED]->(m:Movie)
+    WHERE r.rating >= 8
+    MATCH (m)-[s:SIMILAR]->(rec:Movie)
+    WHERE NOT (u)-[:RATED]->(rec)
+    RETURN rec, m, r.rating AS userRating, s.score AS similarityScore
+    ORDER BY similarityScore DESC
     """
 
-    db.execute_query(query, {"recommendations": recommendations})
+    results, _, _ = db.execute_query(query, {"user_name": user_name})
+
+    return results
 
 
-def recommend_unrated_movies(db, user_name, rating_threshold=8, top_percent=10):
-    similarity_scores = calculate_similarities_in_graph(db, user_name, rating_threshold)
-    similarity_scores = similarity_scores[0]
-    print(similarity_scores)
 
-    similarity_scores.sort(key=lambda x: x['combined_similarity'], reverse=True)
-    top_similar_count = int(len(similarity_scores) * top_percent / 100)
-    top_similar_movies = similarity_scores[:top_similar_count]
+def recommend_unrated_movies(db, user_name, limit):
+    calculate_similarities_in_graph(db, limit)
+    print("Similarity scores calculated")
 
-    recommendations = [
-        {
-            "unrated_movie": score['unrated_title'],
-            "rated_title": score['rated_title'],
-            "similarity": score['combined_similarity']
-        }
-        for score in top_similar_movies
-    ]
+    recommendations = get_recommendations(db, user_name)
+    print("Recommendations fetched")
 
     return recommendations
-
 
 if __name__ == "__main__":
     db = Neo4jConnector(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
 
     user_name = "Sancho Panza"
-    rating_threshold = 8
-    top_percent = 10
 
-    recommendations = recommend_unrated_movies(db, user_name, rating_threshold, top_percent)
-
-    create_similarity_edges_in_graph(db, recommendations)
-
-    for rec in recommendations:
-        print(
-            f"Unrated Movie: {rec['unrated_movie']}, Most Similar Rated Movie: {rec['rated_title']}, Similarity: {rec['similarity']:.2f}")
+    recommendations = recommend_unrated_movies(db, user_name, 1000000)
+    
+    for record in recommendations:
+        print(f"Movie: '{record['rec']['title']}', score: '{record['similarityScore']}'")
+        print(f"Based on movie: '{record['m']['title']}', user rating: '{record['userRating']}'")
