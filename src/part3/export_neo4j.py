@@ -36,8 +36,6 @@ def export_data(db):
     LIMIT 30
     """, "users.csv")
 
-    # users, _, keys = db.execute_query(query)
-    # export_to_csv(users, keys, "users.csv")
 
     query = """
     MATCH (a:Actor)

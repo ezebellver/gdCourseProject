@@ -2,6 +2,19 @@ from src.lib.config import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD, NEO4J_DATABASE
 from src.lib.neo4j_connector import Neo4jConnector
 
 
+def fix_movie_ids(db):
+    query = """
+    MATCH (m:Movie)
+    WHERE m.imdbId IS NOT NULL
+    WITH m, 
+         CASE 
+             WHEN NOT m.imdbId STARTS WITH 'tt' THEN 'tt' + m.imdbId 
+             ELSE m.imdbId 
+         END AS fixedImdbId
+    SET m.imdbId = fixedImdbId
+    """
+    result, _, _ = db.execute_query(query)
+
 def update_movies_with_imdb_rating(db, limit):
     query = """
     CALL apoc.periodic.iterate(
@@ -10,14 +23,8 @@ def update_movies_with_imdb_rating(db, limit):
         RETURN m
         LIMIT $limit',
         
-        'WITH m, 
-             CASE 
-                 WHEN NOT m.imdbId STARTS WITH "tt" THEN "tt" + m.imdbId 
-                 ELSE m.imdbId 
-             END AS fixedImdbId
-        SET m.imdbId = fixedImdbId
-        WITH m, fixedImdbId AS imdbId
-        CALL apoc.load.json($omdbApiUrl + "/?i=" + imdbId + "&apikey=" + $apikey) 
+        'WITH m
+        CALL apoc.load.json($omdbApiUrl + "/?i=" + m.imdbId + "&apikey=" + $apikey) 
         YIELD value
         SET m.imdbRating = value.imdbRating,
             m.year = value.Year,
@@ -62,6 +69,8 @@ def update_movies_with_imdb_rating(db, limit):
 
 if __name__ == "__main__":
     db = Neo4jConnector(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD, NEO4J_DATABASE)
+
+    fix_movie_ids(db)
 
     update_movies_with_imdb_rating(db, 1000)
 

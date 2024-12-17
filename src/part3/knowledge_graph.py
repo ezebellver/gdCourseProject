@@ -4,19 +4,6 @@ import rdflib
 from rdflib import URIRef, Literal, RDF
 from iribaker import to_iri
 
-# data = 'http://localhost/igd/resource/'
-# DATA = Namespace(data)
-#
-# vocab = 'http://localhost/igd/vocab/'
-# VOCAB = Namespace('http://localhost/igd/vocab/')
-#
-# graph_uri = URIRef('http://localhost/igd/resource/courseproject')
-#
-# dataset = Dataset()
-# dataset.bind('igd', DATA)
-# dataset.bind('igd', VOCAB)
-#
-# graph = dataset.graph(graph_uri)
 
 g = rdflib.Graph()
 
