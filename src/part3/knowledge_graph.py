@@ -1,7 +1,7 @@
 import csv
 
 import rdflib
-from rdflib import Dataset, URIRef, Literal, Namespace, RDF, RDFS, OWL, XSD
+from rdflib import URIRef, Literal, RDF
 from iribaker import to_iri
 
 # data = 'http://localhost/igd/resource/'

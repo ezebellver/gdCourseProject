@@ -123,7 +123,7 @@
 ### Part I - Graph Preparation
 - Loaded the `courseProject.db` graph into Neo4j.
 - Enriched missing `imdbRating` properties for over 5,000 nodes using the OMDb API.
-- Added a user node (`Project User`) with 200 rated movies.
+- Added a user node (`Sancho Panza`) with 200 rated movies.
 
 ### Part II - Recommendations and Clustering
 - Computed similarity scores based on:

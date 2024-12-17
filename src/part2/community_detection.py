@@ -6,21 +6,8 @@ from src.lib.neo4j_connector import Neo4jConnector
 
 def perform_louvain_clustering(db):
     query = """
-    CALL gds.graph.project(
-        'movieGraph',
-        ['Movie', 'User'],
-        {
-            SIMILAR_TO: {
-                properties: 'similarity'
-            }
-        }
-    )
-    """
-    db.execute_query(query)
-
-    query = """
     CALL gds.louvain.write(
-        'movieGraph',
+        'userMovieGraph',
         {
             writeProperty: 'community'
         }
@@ -32,37 +19,63 @@ def perform_louvain_clustering(db):
     return result
 
 
-def perform_kmeans_clustering_neo4j(db, n_clusters=5):
-    check_graph_query = """
-        CALL gds.graph.exists('movieGraph') YIELD exists
-        RETURN exists
+def community_setup(db):
+    query = """
+        MATCH (u:User)
+        WHERE u.ratingCount IS NULL
+        OPTIONAL MATCH (u)-[r:RATED]->(m:Movie)
+        WITH u, COALESCE(count(r), 0) AS ratingCount
+        SET u.ratingCount = [toFloat(ratingCount)]
     """
+    db.execute_query(query)
 
-    graph_exists, _, _ = db.execute_query(check_graph_query)
-
-    if not graph_exists[0]["exists"]:
-        query = """
-        CALL gds.graph.project(
-            'movieGraph',
-            ['Movie', 'User'],
+    query = """
+        MATCH (u:User)
+        OPTIONAL MATCH (u)-[r:RATED]->(m:Movie)
+        RETURN gds.graph.project(
+            'userMovieGraph',
+            u,
+            m,
             {
-                SIMILAR_TO: {
-                    properties: 'similarity'
-                }
+                relationshipProperties: r { .rating }
             }
         )
-        """
-        db.execute_query(query)
+    """
+    db.execute_query(query)
 
-    query = f"""
-    CALL gds.kmeans.write(
-        'movieGraph',
-        {{
-            nodeProperty: 'similarity',
-            writeProperty: 'kmeansCluster',
-            k: {n_clusters}
-        }}
+    query = """
+    MATCH (u:User)
+    RETURN gds.graph.project(
+        'userGraph',
+        u,
+        null,
+        {
+            sourceNodeProperties: u { .ratingCount },
+            targetNodeProperties: {}
+        }
     )
+    """
+    db.execute_query(query)
+
+
+def community_cleanup(db):
+    db.execute_query("CALL gds.graph.drop('userMovieGraph')")
+    db.execute_query("CALL gds.graph.drop('userGraph')")
+
+
+def perform_kmeans_clustering_neo4j(db, n_clusters=5):
+    query = f"""
+        CALL gds.kmeans.write(
+            'userGraph',
+            {{
+                nodeProperty: 'ratingCount',
+                writeProperty: 'kmeansCluster',
+                k: {n_clusters},
+                randomSeed: 42
+            }}
+        )
+        YIELD nodePropertiesWritten
+        RETURN nodePropertiesWritten
     """
     result, _, _ = db.execute_query(query)
     return result
@@ -70,8 +83,8 @@ def perform_kmeans_clustering_neo4j(db, n_clusters=5):
 
 def report_communities_louvain(db):
     query = """
-    MATCH (m:Movie)
-    RETURN m.title AS movie, m.community AS community
+    MATCH (u:User)
+    RETURN u.userId AS user, u.community AS community
     ORDER BY community
     """
     results, _, _ = db.execute_query(query)
@@ -82,8 +95,8 @@ def report_communities_louvain(db):
 
 def report_communities_kmeans_neo4j(db):
     query = """
-    MATCH (m:Movie)
-    RETURN m.title AS movie, m.kmeansCluster AS cluster
+    MATCH (u:User)
+    RETURN u.userId AS user, u.kmeansCluster AS cluster
     ORDER BY cluster
     """
     results, _, _ = db.execute_query(query)
@@ -95,20 +108,22 @@ def report_communities_kmeans_neo4j(db):
 if __name__ == "__main__":
     db = Neo4jConnector(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
 
-    print("Performing Louvain Clustering...")
+    community_setup(db)
+
+    print("Performing Louvain Clustering on Users Based on Rated Movies...")
     louvain_results = perform_louvain_clustering(db)
     print(f"Louvain Clustering Results: {louvain_results}")
 
     louvain_communities = report_communities_louvain(db)
-    print("Louvain Communities:")
+    print("Louvain Communities for Users (Based on Movie Ratings):")
     print(louvain_communities)
 
-    print("Performing K-Means Clustering with Neo4j...")
+    print("Performing K-Means Clustering on Users Based on Rated Movies...")
     kmeans_results = perform_kmeans_clustering_neo4j(db, n_clusters=5)
     print(f"K-Means Clustering Results: {kmeans_results}")
 
     kmeans_communities = report_communities_kmeans_neo4j(db)
-    print("K-Means Communities:")
+    print("K-Means Communities for Users (Based on Movie Ratings):")
     print(kmeans_communities)
 
-    db.execute_query("CALL gds.graph.drop('movieGraph')")
+    community_cleanup(db)

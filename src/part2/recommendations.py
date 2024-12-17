@@ -6,22 +6,27 @@ def calculate_similarities_in_graph(db, limit):
     query = """
     MATCH (m:Movie)-[:IN_GENRE]->(g:Genre)<-[:IN_GENRE]-(rec:Movie)
     WHERE m.imdbRating IS NOT NULL AND 
-        m.year IS NOT NULL AND m.runtime IS NOT NULL AND 
-        rec.imdbRating IS NOT NULL AND rec.year IS NOT NULL 
-        AND rec.runtime IS NOT NULL AND m.title <> rec.title
+          m.year IS NOT NULL AND 
+          m.runtime IS NOT NULL AND 
+          rec.imdbRating IS NOT NULL AND 
+          rec.year IS NOT NULL AND 
+          rec.runtime IS NOT NULL AND 
+          m.title <> rec.title
     WITH m, rec
     LIMIT $limit
-
+    
     MATCH (m)-[:IN_GENRE]->(g:Genre)<-[:IN_GENRE]-(rec)
+    WITH m, rec, g, count(g) AS intersection,
+         size([(m)-[:IN_GENRE]->(mg) | mg.name]) AS set1Size,
+         size([(rec)-[:IN_GENRE]->(rg) | rg.name]) AS set2Size,
+         abs(toFloat(m.imdbRating) - toFloat(rec.imdbRating)) AS ratingDiff,
+         abs(toFloat(m.year) - toFloat(rec.year)) AS yearDiff,
+         abs(toFloat(m.runtime) - toFloat(rec.runtime)) AS durationDiff
+    
     WITH m, rec,
-        abs(toFloat(m.imdbRating) - toFloat(rec.imdbRating)) AS ratingDiff,
-        abs(toFloat(m.year) - toFloat(rec.year)) AS yearDiff,
-        abs(toFloat(m.runtime) - toFloat(rec.runtime)) AS durationDiff,
-        count(g) AS genreScore
-
-    WITH m, rec, genreScore,
-        (1/(1 + ratingDiff)) * 0.5 + (1/(1 + yearDiff)) * 0.3 + (1/(1 + durationDiff)) * 0.2 AS numericScore
-    WITH m, rec, (numericScore + genreScore * 0.5) / 1.5 AS totalScore
+        (1/(1 + ratingDiff)) * 0.75 + (1/(1 + yearDiff)) * 0.15 + (1/(1 + durationDiff)) * 0.1 AS numericScore,
+        toFloat(intersection) / (set1Size + set2Size - intersection) AS jaccard
+    WITH m, rec, ROUND((numericScore * 0.4 + jaccard * 0.6), 2) AS totalScore
 
     ORDER BY m.title, totalScore DESC
     WITH m, collect(rec) AS recommendations, totalScore
@@ -73,3 +78,4 @@ if __name__ == "__main__":
     for record in recommendations:
         print(f"Movie: '{record['rec']['title']}', score: '{record['similarityScore']}'")
         print(f"Based on movie: '{record['m']['title']}', user rating: '{record['userRating']}'")
+        print()
