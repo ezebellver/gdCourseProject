@@ -31,9 +31,13 @@ def export_data(db):
 
     db.export_csv("""
     MATCH (u:User)
-    WHERE u.name IS NOT NULL OR u.name = "Sancho Panza"
-    RETURN u.name AS name, u.userId AS userId
-    LIMIT 30
+    WHERE u.name = "Sancho Panza"
+    RETURN u.name AS name
+    UNION
+    MATCH (u:User)
+    WHERE u.name IS NOT NULL AND u.name <> "Sancho Panza"
+    RETURN u.name AS name
+    LIMIT 29
     """, "users.csv")
 
 
