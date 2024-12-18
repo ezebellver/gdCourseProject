@@ -1,0 +1,11 @@
+PREFIX data: <http://localhost/sancho/resource/>
+PREFIX vocab: <http://localhost/sancho/vocab/>
+
+SELECT ?genre (COUNT(?genre) AS ?genreCount)
+WHERE {
+  ?movie vocab:imdbRating ?imdbRating ;
+         vocab:hasGenre ?genre .
+}
+GROUP BY ?genre
+ORDER BY DESC(?genreCount)
+LIMIT 50

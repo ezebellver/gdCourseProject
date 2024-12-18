@@ -1,10 +1,10 @@
-PREFIX movie: <http://localhost/movie/>
+PREFIX data: <http://localhost/sancho/resource/>
+PREFIX vocab: <http://localhost/sancho/vocab/>
 
-SELECT ?movie ?title ?rating
+SELECT ?movie ?title ?imdbRating
 WHERE {
-    ?movie rdf:type movie:Movie .
-    ?movie movie:title ?title .
-    ?movie movie:imdbRating ?rating .
+    ?movie vocab:title ?title ;
+        vocab:imdbRating ?imdbRating .
 }
-ORDER BY DESC(?rating)
+ORDER BY DESC(?imdbRating)
 LIMIT 10

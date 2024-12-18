@@ -1,0 +1,8 @@
+PREFIX data: <http://localhost/sancho/resource/>
+PREFIX vocab: <http://localhost/sancho/vocab/>
+
+SELECT ?genre
+WHERE {
+  ?movie vocab:title "Seven Samurai" ;
+         vocab:hasGenre ?genre .
+}

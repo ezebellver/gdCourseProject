@@ -71,6 +71,4 @@ def export_data(db):
 if __name__ == '__main__':
     db = Neo4jConnector(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
 
-
-
     export_data(db)

@@ -1,10 +1,9 @@
-PREFIX actor: <http://localhost/actor/>
-PREFIX movie: <http://localhost/movie/>
+PREFIX data: <http://localhost/sancho/resource/>
+PREFIX vocab: <http://localhost/sancho/vocab/>
 
-SELECT ?actor ?movie ?title
+SELECT ?movie ?title
 WHERE {
-    ?actor rdf:type actor:Actor .
-    ?actor actor:name "Leonardo DiCaprio" .
-    ?actor actor:actedIn ?movie .
-    ?movie movie:title ?title .
+  ?actor vocab:name "Buster Keaton" ;
+         vocab:actedIn ?movie .
+  ?movie vocab:title ?title .
 }

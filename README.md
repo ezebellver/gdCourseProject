@@ -132,6 +132,18 @@
 - Created similarity edges for the 10% most similar movies.
 - Detected communities using Louvain and k-means clustering.
 
+#### Louvain Clustering
+The Louvain algorithm is a community detection method used to identify clusters within a graph based on modularity optimization. Modularity measures the density of edges within clusters compared to edges between clusters. Louvain works iteratively to maximize modularity, dynamically adjusting nodes to identify the optimal community structure.
+
+**In our application**, we used Louvain clustering to group users into communities based on their interactions (ratings) with movies. This provides insight into user preferences and helps to identify clusters of users with similar movie tastes.
+
+#### K-Means Clustering
+K-Means is a machine learning algorithm that partitions data points into a predefined number of clusters (`k`) by minimizing the variance within each cluster. It iteratively assigns points to the nearest cluster center and recalculates the centers until convergence.
+
+**In our application**, we performed K-Means clustering on users using the `ratingCount` property (number of rated movies). This allowed us to segment users into clusters based on their activity levels, providing another dimension for understanding user behavior and tailoring recommendations.
+
+Both approaches complement each other, with Louvain leveraging graph-based community detection and K-Means focusing on numeric feature clustering.
+
 ### Part III - Knowledge Graph
 - Exported 100 movies, 30 users, 200 actors, and relevant relationships (IN_GENRE and ACTED_IN) to RDF.
 - Created CSV files for RDF population in the `data/` folder:
@@ -142,8 +154,9 @@
   - `acted_in.csv`
 - Validated the RDF graph with SPARQL queries placed in the `sparql_queries/` folder:
   - `top_movies.sparql`: List the ten movies with the highest IMDb rating.
-  - `movies_by_actor.sparql`: Find movies acted in by "Leonardo DiCaprio."
-  - `genres_of_inception.sparql`: List genres of the movie "Inception."
+  - `movies_by_actor.sparql`: Find movies acted in by "Buster Keaton."
+  - `genres_of_movie.sparql`: List genres of the movie "Seven Samurai."
+  - `most_common_genres_in_top_movies.sparql`: Count the genres appearing in the top 50 rated movies, grouped and ordered by frequency in descending order.
 
 ---
 
