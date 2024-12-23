@@ -5,10 +5,10 @@ from src.lib.neo4j_connector import Neo4jConnector
 def calculate_similarities_in_graph(db, limit):
     query = """
     MATCH (m:Movie)-[:IN_GENRE]->(g:Genre)<-[:IN_GENRE]-(rec:Movie)
-    WHERE m.imdbRating IS NOT NULL AND 
+    WHERE m.imdbRating IS NOT NULL AND m.imdbRating <> "N/A" AND 
           m.year IS NOT NULL AND 
           m.runtime IS NOT NULL AND 
-          rec.imdbRating IS NOT NULL AND 
+          rec.imdbRating IS NOT NULL AND rec.imdbRating <> "N/A" AND 
           rec.year IS NOT NULL AND 
           rec.runtime IS NOT NULL AND 
           m.title <> rec.title

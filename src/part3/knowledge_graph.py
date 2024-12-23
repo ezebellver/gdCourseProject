@@ -30,8 +30,8 @@ def add_movie_triples(movie_data):
 
 
 def add_user_triples(user_data):
-    user = URIRef(to_iri(data + user_data["userId"]))
-    dataset.add((user, RDFS.label, Literal(user_data["userId"])))
+    user = URIRef(to_iri(data + user_data["name"]))
+    dataset.add((user, RDFS.label, Literal(user_data["name"])))
     dataset.add((user, RDF.type, VOCAB['User']))
     graph.add((user, VOCAB["name"], Literal(user_data["name"])))
 
